@@ -1,11 +1,11 @@
-# Path for selenium extension binaries
+# Path for selenium extension binaries.
 selenium_drivers_path: "C:\\selenium-drivers"
 selenium_chrome_driver: "{{ selenium_drivers_path }}\\chromedriver.exe"
 
-# Directory in which to store HTTP replay files
+# Directory in which to store HTTP replay files.
 http_replay_dir: "C:\\ndt-http-replays"
 
-# Directory for NDT E2E Client Worker
+# Directory for NDT E2E Client Worker.
 ndt_e2e_client_dir: "C:\\ndt-e2e-clientworker"
 
 # Directories for storing results of NDT E2E tests.

@@ -1,11 +1,12 @@
-# Local directory containing HTTP replay files for NDT E2E client worker
+# Local directory containing HTTP replay files for NDT E2E client worker.
 local_http_replay_dir: http_replays
 
-# HTTP replay files (note that these are not in this git repo and must be
-# generated or copied by an alternative means).
+# HTTP replay file for Banjo client (note that this file is not in this git
+# repo and must be generated or copied by an alternative means).
 http_replay_file: banjo-2016-04-25.replay
 
+# Git URL for NDT E2E Client Worker.
 ndt_e2e_client_git: https://github.com/m-lab/ndt-e2e-clientworker.git
 
-# Path to client_wrapper executable in NDT E2E Client Worker
+# Path to client_wrapper executable in NDT E2E Client Worker.
 client_wrapper_path: client_wrapper/client_wrapper.py
