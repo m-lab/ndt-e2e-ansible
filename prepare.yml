@@ -54,8 +54,8 @@
     local_http_replay_files:
       - banjo-2016-04-25.replay
 
-    # Remove directory in which to store HTTP replay files
-    http_replay_dir: "C://ndt-http-replays"
+    # Remote directory in which to store HTTP replay files
+     http_replay_dir: "C:\\ndt-http-replays"
   tasks:
     - name: create temp directory
       win_file: "path={{ temp_dir }} state=directory"
