@@ -1,0 +1,237 @@
+---
+# vim:ft=ansible:
+
+- name: Install NDT client wrapper and all dependencies
+  hosts: windows
+  vars:
+    # Temporary directory in which we download installers
+    temp_dir: "C:\\temp"
+
+    python_installer:
+      url: https://www.python.org/ftp/python/2.7.11/python-2.7.11.msi
+      dest: "{{ temp_dir }}\\python-2.7.11.msi"
+
+    git_installer:
+      url: https://github.com/git-for-windows/git/releases/download/v2.8.1.windows.1/Git-2.8.1-64-bit.exe
+      dest: "{{ temp_dir }}\\Git-2.8.1-64-bit.exe"
+
+    # TODO(mtlynch): Figure out how to install a particular version. This always
+    # installs latest.
+    chrome_installer:
+      url: http://dl.google.com/chrome/install/375.126/chrome_installer.exe
+      dest: "{{ temp_dir }}\\chrome_installer.exe"
+
+    firefox_installer:
+      url: https://download.mozilla.org/?product=firefox-45.0.1-SSL&os=win&lang=en-US
+      dest: "{{ temp_dir }}\\Firefox Setup 45.0.1.exe"
+
+    selenium_edge_installer:
+      url: https://download.microsoft.com/download/8/D/0/8D0D08CF-790D-4586-B726-C6469A9ED49C/MicrosoftWebDriver.msi
+      dest: "{{ temp_dir }}\\MicrosoftWebDriver.msi"
+
+    selenium_chrome_driver_zip:
+      url: http://chromedriver.storage.googleapis.com/2.9/chromedriver_win32.zip
+      dest: "{{ temp_dir }}\\chromedriver_win32.zip"
+
+    # Path for selenium extension binaries
+    selenium_drivers_path: "C:\\selenium-drivers"
+    selenium_chrome_driver: "{{ selenium_drivers_path }}\\chromedriver.exe"
+
+    # WMF 5.0 upgrader for Windows Server 2012 R2
+    wmf_installer_win2k12r2:
+      url: http://go.microsoft.com/fwlink/?LinkId=717507
+      dest: "{{ temp_dir }}\\Win8.1AndW2K12R2-KB3134758-x64.msu"
+
+    ndt_e2e_client:
+      git_url: https://github.com/m-lab/ndt-e2e-clientworker.git
+      path: "C:\\ndt-e2e-clientworker"
+
+    # Local directory containing HTTP replay files for NDT E2E client worker
+    local_http_replay_dir: http_replays
+
+    # HTTP replay files (note that these are not in this git repo and must be
+    # generated or copied by an alternative means).
+    local_http_replay_files:
+      - banjo-2016-04-25.replay
+
+    # Remote directory in which to store HTTP replay files
+     http_replay_dir: "C:\\ndt-http-replays"
+  tasks:
+    - name: create temp directory
+      win_file: "path={{ temp_dir }} state=directory"
+
+    - name: check if Python is installed
+      win_stat: path="C:\\Python27\\python.exe"
+      tags: python
+      register: python_binary
+
+    - name: download Python
+      tags: python
+      win_get_url:
+        proxy_url: "{{ http_proxy }}"
+        url: "{{ python_installer.url }}"
+        dest: "{{ python_installer.dest }}"
+      register: python_download
+      when: not python_binary.stat.exists
+
+    - name: install Python
+      tags: python
+      win_msi: path="{{ python_installer.url }}" wait=true
+      register: python_install
+      when: python_download.changed
+
+    - name: append Python to PATH variable
+      tags: python
+      script: env_path_append.ps1 -append ";C:\Python27;C:\Python27\Scripts"
+      when: python_install.changed
+
+    - name: check if git is installed
+      win_stat: path="C:\\Program Files\\Git\\bin\\git.exe"
+      tags: git
+      register: git_binary
+
+    - name: download git
+      tags: git
+      win_get_url:
+        proxy_url: "{{ http_proxy }}"
+        url: "{{ git_installer.url }}"
+        dest: "{{ git_installer.dest }}"
+      when: not git_binary.stat.exists
+
+    - name: install git
+      tags: git
+      raw: '& "{{ git_installer.dest }}" /SILENT'
+      register: git_install
+      when: not git_binary.stat.exists
+
+    - name: append git to PATH variable
+      tags: git
+      script: env_path_append.ps1 -append ";C:\Program Files\Git\bin"
+      when: git_install.rc is defined and git_install.rc == 0
+
+    - name: check if Chrome is installed
+      win_stat: path="C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+      tags: chrome
+      register: chrome_binary
+
+    - name: download Chrome
+      tags: chrome
+      win_get_url:
+        proxy_url: "{{ http_proxy }}"
+        url: "{{ chrome_installer.url }}"
+        dest: "{{ chrome_installer.dest }}"
+      register: chromedownload
+      when: not chrome_binary.stat.exists
+
+    - name: install Chrome
+      tags: chrome
+      raw: '& "{{ chrome_installer.dest }}" /silent /install'
+      when: chromedownload.changed
+
+    - name: check if Firefox is installed
+      win_stat: path="C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe"
+      tags: firefox
+      register: firefox_binary
+
+    - name: download Firefox
+      tags: firefox
+      win_get_url:
+        proxy_url: "{{ http_proxy }}"
+        url: "{{ firefox_installer.url }}"
+        dest: "{{ firefox_installer.dest }}"
+      register: firefox_download
+      when: not firefox_binary.stat.exists
+
+    - name: install Firefox
+      tags: firefox
+      raw: '& "{{ firefox_installer.dest }}" -ms'
+      when: firefox_download.changed
+
+    - name: download Selenium Edge installer
+      tags: selenium-edge
+      win_get_url:
+        proxy_url: "{{ http_proxy }}"
+        url: "{{ selenium_edge_installer.url }}"
+        dest: "{{ selenium_edge_installer.dest }}"
+      register: selenium_edge_download
+      # Edge is only available on Win10
+      when: ansible_distribution == "Microsoft Windows NT 10.0.10240.0"
+
+    - name: install Selenium Edge
+      tags: selenium-edge
+      win_msi: path="{{ selenium_edge_installer.dest }}" wait=true
+      when: selenium_edge_download.changed
+
+    - name: download Selenium Chrome driver
+      tags: selenium-chrome
+      win_get_url:
+        proxy_url: "{{ http_proxy }}"
+        url: "{{ selenium_chrome_driver_zip.url }}"
+        dest: "{{ selenium_chrome_driver_zip.dest }}"
+      register: selenium_chrome_download
+
+    - name: install Selenium Chrome driver
+      tags: selenium-chrome
+      win_unzip:
+        src: "{{ selenium_chrome_driver_zip.dest }}"
+        dest: "{{ selenium_drivers_path }}"
+        creates: "{{ selenium_chrome_driver }}"
+      register: selenium_chrome_install
+      when: selenium_chrome_download.changed
+
+    - name: append Selenium Chrome driver to PATH variable
+      tags: selenium-chrome
+      script: env_path_append.ps1 -append ";{{ selenium_drivers_path }}"
+      when: selenium_chrome_install.changed
+
+    - name: check if NDT E2E client worker repo exists
+      win_stat: path="{{ ndt_e2e_client.path }}"
+      tags: ndt-e2e
+      register: ndt_e2e_path_info
+
+    - name: download NDT E2E client worker source
+      tags: ndt-e2e
+      environment:
+        http_proxy: "{{ http_proxy }}"
+      raw: "git clone {{ ndt_e2e_client.git_url }} {{ ndt_e2e_client.path }}"
+      when: not ndt_e2e_path_info.stat.exists
+
+    - name: install NDT E2E dependencies
+      tags: ndt-e2e
+      environment:
+        http_proxy: "{{ http_proxy }}"
+      raw: pip install -r "{{ ndt_e2e_client.path }}\\requirements.txt"
+
+    # TODO(mtlynch): Figure out why this works locally but not remotely
+    - name: install mitmdump (part of mitmproxy)
+      tags: ndt-e2e
+      environment:
+        http_proxy: "{{ http_proxy }}"
+        https_proxy: "{{ http_proxy }}"
+      raw: pip install mitmproxy
+
+    - name: create HTTP replay directory
+      tags: ndt-e2e
+      win_file: "path={{ http_replay_dir }} state=directory"
+
+    - name: copy HTTP replays
+      tags: ndt-e2e
+      win_copy: src={{ local_http_replay_dir }}/{{ item }} dest={{ http_replay_dir }}
+      with_items: local_http_replay_files
+
+    # TODO(mtlynch): Make idempotent
+    - name: download WMF5
+      tags: wmf
+      win_get_url:
+        proxy_url: "{{ http_proxy }}"
+        url: "{{ wmf_installer_win2k12r2.url }}"
+        dest: "{{ wmf_installer_win2k12r2.dest }}"
+      register: wmf_download
+      # Win10 already has WMF 5.0 installed
+      when: ansible_distribution != "Microsoft Windows NT 10.0.10240.0"
+
+    # Note: This seems to take 10-15 mins to take effect.
+    - name: install WMF5
+      tags: wmf
+      raw: '& "{{ wmf_installer_win2k12r2.dest }}" /quiet'
+      when: wmf_download.changed
