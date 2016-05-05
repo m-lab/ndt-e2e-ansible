@@ -201,7 +201,7 @@
       tags: ndt-e2e
       win_file: "path={{ http_replay_dir }} state=directory"
 
-    - name: copy HTTP replays
+    - name: copy HTTP replay
       tags: ndt-e2e
       win_copy: src={{ local_http_replay_dir }}/{{ http_replay_file }} dest={{ http_replay_dir }}
 
@@ -348,7 +348,7 @@
       tags: ndt-e2e
       file: path={{ http_replay_dir }} state=directory owner={{ ansible_user }}
 
-    - name: copy HTTP replays
+    - name: copy HTTP replay
       tags: ndt-e2e
       become_user: "{{ ansible_user }}"
       copy: src={{ local_http_replay_dir }}/{{ http_replay_file }} dest={{ http_replay_dir }}
