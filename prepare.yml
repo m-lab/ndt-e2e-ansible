@@ -304,7 +304,6 @@
            dest={{ ndt_e2e_client_dir }}
            update=yes
 
-
     - name: Install ndt e2e requirements
       tags: ndt-e2e
       pip: requirements={{ ndt_e2e_client_dir }}/requirements.txt
@@ -321,7 +320,6 @@
       tags: ndt-e2e
       become_user: "{{ ansible_user }}"
       copy: src={{ local_http_replay_dir }}/{{ http_replay_file }} dest={{ http_replay_dir }}
-
 
     - name: create NDT E2E test results directories
       tags: ndt-e2e
