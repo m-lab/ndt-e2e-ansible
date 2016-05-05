@@ -1,7 +1,7 @@
 ---
 # vim:ft=ansible:
 
-- name: Install NDT client wrapper and all dependencies
+- name: Install NDT client wrapper and all dependencies on Windows client machines
   hosts: windows
   vars:
     # Temporary directory in which we download installers
@@ -41,23 +41,9 @@
     wmf_installer_win2k12r2:
       url: http://go.microsoft.com/fwlink/?LinkId=717507
       dest: "{{ temp_dir }}\\Win8.1AndW2K12R2-KB3134758-x64.msu"
-
-    ndt_e2e_client:
-      git_url: https://github.com/m-lab/ndt-e2e-clientworker.git
-      path: "C:\\ndt-e2e-clientworker"
-
-    # Local directory containing HTTP replay files for NDT E2E client worker
-    local_http_replay_dir: http_replays
-
-    # HTTP replay files (note that these are not in this git repo and must be
-    # generated or copied by an alternative means).
-    local_http_replay_files:
-      - banjo-2016-04-25.replay
-
-    # Remote directory in which to store HTTP replay files
-     http_replay_dir: "C:\\ndt-http-replays"
   tasks:
     - name: create temp directory
+      tags: temp_dir
       win_file: "path={{ temp_dir }} state=directory"
 
     - name: check if Python is installed
@@ -80,7 +66,7 @@
       register: python_install
       when: python_download.changed
 
-    - name: append Python to PATH variable
+    - name: append Python to Path variable
       tags: python
       script: env_path_append.ps1 -append ";C:\Python27;C:\Python27\Scripts"
       when: python_install.changed
@@ -104,7 +90,7 @@
       register: git_install
       when: not git_binary.stat.exists
 
-    - name: append git to PATH variable
+    - name: append git to Path variable
       tags: git
       script: env_path_append.ps1 -append ";C:\Program Files\Git\bin"
       when: git_install.rc is defined and git_install.rc == 0
@@ -185,7 +171,7 @@
       when: selenium_chrome_install.changed
 
     - name: check if NDT E2E client worker repo exists
-      win_stat: path="{{ ndt_e2e_client.path }}"
+      win_stat: path="{{ ndt_e2e_client_dir }}"
       tags: ndt-e2e
       register: ndt_e2e_path_info
 
@@ -193,14 +179,14 @@
       tags: ndt-e2e
       environment:
         http_proxy: "{{ http_proxy }}"
-      raw: "git clone {{ ndt_e2e_client.git_url }} {{ ndt_e2e_client.path }}"
+      raw: "git clone {{ ndt_e2e_client_git }} {{ ndt_e2e_client_dir }}"
       when: not ndt_e2e_path_info.stat.exists
 
     - name: install NDT E2E dependencies
       tags: ndt-e2e
       environment:
         http_proxy: "{{ http_proxy }}"
-      raw: pip install -r "{{ ndt_e2e_client.path }}\\requirements.txt"
+      raw: pip install -r "{{ ndt_e2e_client_dir }}\\requirements.txt"
 
     # TODO(mtlynch): Figure out why this works locally but not remotely
     - name: install mitmdump (part of mitmproxy)
@@ -216,8 +202,15 @@
 
     - name: copy HTTP replays
       tags: ndt-e2e
-      win_copy: src={{ local_http_replay_dir }}/{{ item }} dest={{ http_replay_dir }}
-      with_items: local_http_replay_files
+      win_copy: src={{ local_http_replay_dir }}/{{ http_replay_file }} dest={{ http_replay_dir }}
+
+    - name: create NDT E2E test results directories
+      tags: ndt-e2e
+      win_file: "path={{ item }} state=directory"
+      with_items:
+        - "{{ raw_results_dir }}"
+        - "{{ zipped_results_dir }}"
+        - "{{ archived_results_dir }}"
 
     # TODO(mtlynch): Make idempotent
     - name: download WMF5
