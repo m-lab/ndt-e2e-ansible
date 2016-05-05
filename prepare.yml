@@ -26,6 +26,7 @@
       dest: "{{ temp_dir }}\\Firefox Setup 45.0.1.exe"
 
     selenium_edge_installer:
+      # WebDriver installer for Windows 10 Build 10240
       url: https://download.microsoft.com/download/8/D/0/8D0D08CF-790D-4586-B726-C6469A9ED49C/MicrosoftWebDriver.msi
       dest: "{{ temp_dir }}\\MicrosoftWebDriver.msi"
 
@@ -228,3 +229,134 @@
       tags: wmf
       raw: '& "{{ wmf_installer_win2k12r2.dest }}" /quiet'
       when: wmf_download.changed
+
+- name: Install NDT client wrapper and all dependencies on Linux client machines
+  hosts: linux
+  vars:
+    selenium_chrome_driver_url: http://chromedriver.storage.googleapis.com/2.21/chromedriver_linux64.zip
+
+    selenium_chrome_driver: "{{ selenium_drivers_path }}/chromedriver"
+
+    chrome_apt_file: /etc/apt/sources.list.d/google-chrome.list
+  become: True
+  become_method: sudo
+  become_user: root
+  environment:
+    http_proxy: "{{ http_proxy }}"
+    https_proxy: "{{ http_proxy }}"
+  tasks:
+    - name: install apt packages
+      apt: name={{ item }} state=present update_cache=yes
+      with_items:
+        - git
+        - python
+        - python-pip
+        - firefox
+        - unzip
+        - zip
+        # Required for mitmproxy
+        - python-dev
+        - libffi-dev
+        - libssl-dev
+        - libxml2-dev
+        - libxslt1-dev
+        - libjpeg8-dev
+        - zlib1g-dev
+
+    - name: check if xvfb is installed
+      tags: xvfb
+      command: dpkg -s xvfb
+      register: xvfb_check_deb
+      failed_when: xvfb_check_deb.rc > 1
+      changed_when: xvfb_check_deb == 1
+
+    - name: install xvfb package
+      tags: xvfb
+      apt: name=xvfb state=present
+      when: xvfb_check_deb.rc == 1
+
+    - name: install xvfb init.d daemon script
+      template: src=xvfb-init.d-template dest=/etc/init.d/xvfb mode=0755
+      tags: xvfb
+      when: xvfb_check_deb.rc == 1
+
+    - name: set xvfb to run on startup
+      tags: xvfb
+      shell: update-rc.d xvfb defaults
+      when: xvfb_check_deb.rc == 1
+
+    - name: start xvfb service
+      tags: xvfb
+      action: service name=xvfb state=started
+
+    - name: check if the Chrome apt file exists
+      tags: chrome
+      stat: path={{ chrome_apt_file }}
+      register: chrome_file_stat
+
+    - name: add Chrome key to apt-key
+      tags: chrome
+      shell: wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+      when: not chrome_file_stat.stat.exists
+
+    - name: add Chrome repo
+      tags: chrome
+      copy: content="deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
+            dest={{ chrome_apt_file }}
+            owner=root
+            group=root
+            mode=644
+      when: not chrome_file_stat.stat.exists
+
+    - name: install Chrome
+      tags: chrome
+      apt: pkg=google-chrome-stable state=installed update_cache=yes
+
+    - name: create Selenium driver directory
+      tags: selenium-chrome
+      file: path={{ selenium_drivers_path }} state=directory
+
+    - name: install Selenium Chrome driver
+      tags: selenium-chrome
+      unarchive: src={{ selenium_chrome_driver_url }}
+                 dest={{ selenium_drivers_path }}
+                 copy=no
+      register: selenium_chrome_install
+
+    - name: create NDT E2E client worker source directory
+      tags: ndt-e2e
+      file: path={{ ndt_e2e_client_dir }}
+            state=directory
+            owner={{ ansible_user }}
+
+    - name: download NDT E2E client worker source
+      tags: ndt-e2e
+      git: repo={{ ndt_e2e_client_git }}
+           dest={{ ndt_e2e_client_dir }}
+           update=yes
+      become_user: "{{ ansible_user }}"
+
+    - name: Install ndt e2e requirements
+      tags: ndt-e2e
+      pip: requirements={{ ndt_e2e_client_dir }}/requirements.txt
+
+    - name: Install mitmproxy
+      tags: ndt-e2e
+      pip: name=mitmproxy
+
+    - name: create HTTP replay directory
+      tags: ndt-e2e
+      file: path={{ http_replay_dir }} state=directory owner={{ ansible_user }}
+
+    - name: copy HTTP replays
+      tags: ndt-e2e
+      copy: src={{ local_http_replay_dir }}/{{ http_replay_file }} dest={{ http_replay_dir }}
+      become_user: "{{ ansible_user }}"
+
+    - name: create NDT E2E test results directories
+      tags: ndt-e2e
+      file: path={{ item }} state=directory owner={{ ansible_user }}
+      with_items:
+        - "{{ raw_results_dir }}"
+        - "{{ zipped_results_dir }}"
+        - "{{ archived_results_dir }}"
