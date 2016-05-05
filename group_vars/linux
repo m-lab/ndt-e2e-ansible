@@ -1,0 +1,17 @@
+# Directory in which to store HTTP replay files
+http_replay_dir: /opt/ndt-http-replays
+
+# Directory for NDT E2E Client Worker
+ndt_e2e_client_dir: /opt/ndt-e2e-clientworker
+
+# Path for selenium extension binaries
+selenium_drivers_path: /opt/selenium_drivers
+
+# Name of virtual display in which to run browsers (via xvfb).
+virtual_display: :1
+
+# Directories for storing results of NDT E2E tests.
+results_dir: /opt/ndt-results
+raw_results_dir: "{{ results_dir }}/raw"
+zipped_results_dir: "{{ results_dir }}/zips"
+archived_results_dir: "{{ results_dir }}/archived"
