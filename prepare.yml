@@ -312,14 +312,11 @@
       tags: ndt-e2e
       pip: name=mitmproxy
 
-    - name: create HTTP replay directory
+    - name: copy HTTP replay file
       tags: ndt-e2e
-      file: path={{ http_replay_dir }} state=directory owner={{ ansible_user }}
-
-    - name: copy HTTP replay
-      tags: ndt-e2e
-      become_user: "{{ ansible_user }}"
-      copy: src={{ local_http_replay_dir }}/{{ http_replay_file }} dest={{ http_replay_dir }}
+      copy: src={{ local_http_replay_dir }}/{{ http_replay_file }}
+            dest={{ http_replay_dir }}
+            owner={{ ansible_user }}
 
     - name: create NDT E2E test results directories
       tags: ndt-e2e
