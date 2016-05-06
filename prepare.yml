@@ -325,3 +325,125 @@
         - "{{ raw_results_dir }}"
         - "{{ zipped_results_dir }}"
         - "{{ archived_results_dir }}"
+
+- name: Install NDT client wrapper and all dependencies on OS X client machines
+  hosts: osx
+  vars:
+    # Temporary directory in which we download packages.
+    temp_dir: /tmp
+
+    selenium_chrome_driver_url: http://chromedriver.storage.googleapis.com/2.21/chromedriver_mac32.zip
+    selenium_chrome_download_path: "{{ temp_dir }}/chromedriver_mac32.zip"
+
+    selenium_chrome_driver: "{{ selenium_drivers_path }}/chromedriver"
+
+    # Named mavericks, but works on El Capitan.
+    # TODO(mtlynch): Verify this package works on Mountain Lion.
+    git_installer_version: git-2.8.1-intel-universal-mavericks
+    git_installer_url: http://ufpr.dl.sourceforge.net/project/git-osx-installer/{{ git_installer_version }}.dmg
+    git_installer_download_path: "{{ temp_dir }}/{{ git_installer_version }}.dmg"
+    git_installer_image_name: /Volumes/Git 2.8.1 Mavericks Intel Universal
+
+    mitmproxy_version: 0.17.1
+    mitmproxy_url: https://github.com/mitmproxy/mitmproxy/releases/download/v{{ mitmproxy_version }}/mitmproxy-{{ mitmproxy_version }}-osx.tar.gz
+    mitmproxy_download_path: "{{ temp_dir }}/mitmproxy-{{ mitmproxy_version }}.tar.gz"
+  become: True
+  become_method: sudo
+  become_user: root
+  environment:
+    http_proxy: "{{ http_proxy }}"
+    https_proxy: "{{ http_proxy }}"
+  tasks:
+    # TODO(mtlynch): Add tasks to install Chrome.
+    # TODO(mtlynch): Add tasks to install Firefox.
+
+    - name: create Selenium driver directory
+      tags: selenium-chrome
+      file: path={{ selenium_drivers_path }} state=directory owner={{ ansible_user }}
+
+    - name: download Selenium Chrome driver
+      become_user: "{{ ansible_user }}"
+      tags: selenium-chrome
+      get_url: url={{ selenium_chrome_driver_url }}
+               dest={{ selenium_chrome_download_path }}
+      register: download_selenium_chrome
+
+    # TODO(mtlynch): Switch to unarchive module once issue #15754 is fixed:
+    # https://github.com/ansible/ansible/issues/15754
+    - name: unarchive Selenium Chrome driver
+      become_user: "{{ ansible_user }}"
+      tags: selenium-chrome
+      shell: unzip {{ selenium_chrome_download_path }} -d {{ selenium_drivers_path }}
+      when: download_selenium_chrome.changed
+
+    - name: download Git installer for OS X
+      become_user: "{{ ansible_user }}"
+      get_url: url={{ git_installer_url }}
+               dest={{ git_installer_download_path }}
+
+    - name: mount installer dmg file
+      shell: hdiutil attach {{ git_installer_download_path }}
+
+    - name: install git
+      shell: installer -package "{{ git_installer_image_name }}/{{ git_installer_version }}.pkg" -target /
+
+    - name: unmount Git installer dmg file
+      shell: hdiutil detach "{{ git_installer_image_name }}/"
+
+    - name: download mitmproxy
+      become_user: "{{ ansible_user }}"
+      tags: mitmproxy
+      get_url: url={{ mitmproxy_url }} dest={{ mitmproxy_download_path }}
+      register: mitmproxy_download
+
+    - name: create mitmproxy directory
+      tags: mitmproxy
+      file: path={{ mitmproxy_install_dir }}
+            state=directory
+            owner={{ ansible_user }}
+
+    # TODO(mtlynch): Switch to unarchive module once issue #15754 is fixed:
+    # https://github.com/ansible/ansible/issues/15754
+    - name: unarchive mitmproxy
+      become_user: "{{ ansible_user }}"
+      tags: mitmproxy
+      shell: tar -xvzf {{ mitmproxy_download_path }} -C {{ mitmproxy_install_dir }}
+      when: mitmproxy_download.changed
+
+    - name: install pip
+      tags: pip
+      shell: easy_install pip
+
+    - name: create NDT E2E client worker source directory
+      tags: ndt-e2e
+      file: path={{ ndt_e2e_client_dir }}
+            state=directory
+            owner={{ ansible_user }}
+
+    - name: download NDT E2E client worker source
+      tags: ndt-e2e
+      git: repo={{ ndt_e2e_client_git }}
+           dest={{ ndt_e2e_client_dir }}
+           update=yes
+      become_user: "{{ ansible_user }}"
+
+    - name: Install ndt e2e requirements
+      become_user: "{{ ansible_user }}"
+      tags: ndt-e2e
+      pip: requirements={{ ndt_e2e_client_dir }}/requirements.txt
+           executable=/usr/local/bin/pip
+           extra_args="--user {{ ansible_user }}"
+
+    - name: copy HTTP replay file
+      tags: ndt-e2e
+      copy: src={{ local_http_replay_dir }}/{{ http_replay_file }}
+            dest={{ http_replay_dir }}
+            owner={{ ansible_user }}
+
+    - name: create NDT E2E test results directories
+      tags: ndt-e2e
+      file: path={{ item }} state=directory owner={{ ansible_user }}
+      with_items:
+        - "{{ raw_results_dir }}"
+        - "{{ zipped_results_dir }}"
+        - "{{ archived_results_dir }}"
