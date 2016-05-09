@@ -432,6 +432,12 @@
            executable=/usr/local/bin/pip
            extra_args="--user {{ ansible_user }}"
 
+    # On OS X, we need to create the destination directory before the copy
+    # module will succeed.
+    - name: create HTTP replay file directory
+      tags: ndt-e2e
+      file: path={{ http_replay_dir }} state=directory
+
     - name: copy HTTP replay file
       tags: ndt-e2e
       copy: src={{ local_http_replay_dir }}/{{ http_replay_file }}
