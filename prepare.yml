@@ -455,7 +455,9 @@
     # module will succeed.
     - name: create HTTP replay directory
       tags: ndt-e2e
-      file: path={{ http_replay_dir }} state=directory owner={{ ansible_user }}
+      file: path={{ http_replay_dir }}
+            state=directory
+            owner={{ ansible_user }}
 
     - name: copy HTTP replay file
       tags: ndt-e2e
