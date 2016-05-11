@@ -183,6 +183,13 @@
       raw: "git clone {{ ndt_e2e_client_git }} {{ ndt_e2e_client_dir }}"
       when: not ndt_e2e_path_info.stat.exists
 
+    - name: update NDT E2E client worker source
+      tags: ndt-e2e
+      environment:
+        http_proxy: "{{ http_proxy }}"
+      raw: "cd {{ ndt_e2e_client_dir }}; git pull origin master"
+      when: ndt_e2e_path_info.stat.exists
+
     - name: install NDT E2E dependencies
       tags: ndt-e2e
       environment:
@@ -201,7 +208,7 @@
       tags: ndt-e2e
       win_file: "path={{ http_replay_dir }} state=directory"
 
-    - name: copy HTTP replay
+    - name: copy HTTP replay file
       tags: ndt-e2e
       win_copy: src={{ local_http_replay_dir }}/{{ http_replay_file }} dest={{ http_replay_dir }}
 
@@ -335,6 +342,9 @@
     selenium_chrome_driver_url: http://chromedriver.storage.googleapis.com/2.21/chromedriver_mac32.zip
     selenium_chrome_download_path: "{{ temp_dir }}/chromedriver_mac32.zip"
 
+    selenium_safari_driver_url: http://selenium-release.storage.googleapis.com/2.48/SafariDriver.safariextz
+    selenium_safari_download_path: "{{ temp_dir }}/SafariDriver.safariextz"
+
     # Named mavericks, but works on El Capitan.
     # TODO(mtlynch): Verify this package works on Mountain Lion.
     git_installer_version: git-2.8.1-intel-universal-mavericks
@@ -371,8 +381,17 @@
     - name: unarchive Selenium Chrome driver
       become_user: "{{ ansible_user }}"
       tags: selenium-chrome
-      shell: unzip {{ selenium_chrome_download_path }} -d {{ selenium_drivers_path }}
+      shell: unzip {{ selenium_chrome_download_path }} -o -d {{ selenium_drivers_path }}
       when: download_selenium_chrome.changed
+
+    - name: download Selenium Safari driver
+      become_user: "{{ ansible_user }}"
+      tags: selenium-safari
+      get_url: url={{ selenium_safari_driver_url }}
+               dest={{ selenium_safari_download_path }}
+
+    # TODO(mtlynch): Automate installation of Selenium Safari driver. This may
+    # not be possible: http://stackoverflow.com/q/9981307/3653712
 
     - name: download Git installer for OS X
       become_user: "{{ ansible_user }}"
@@ -434,15 +453,17 @@
 
     # On OS X, we need to create the destination directory before the copy
     # module will succeed.
-    - name: create HTTP replay file directory
+    - name: create HTTP replay directory
       tags: ndt-e2e
-      file: path={{ http_replay_dir }} state=directory
+      file: path={{ http_replay_dir }}
+            state=directory
+            owner={{ ansible_user }}
 
     - name: copy HTTP replay file
       tags: ndt-e2e
+      become_user: "{{ ansible_user }}"
       copy: src={{ local_http_replay_dir }}/{{ http_replay_file }}
             dest={{ http_replay_dir }}
-            owner={{ ansible_user }}
 
     - name: create NDT E2E test results directories
       tags: ndt-e2e
