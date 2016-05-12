@@ -10,3 +10,10 @@ ndt_e2e_client_git: https://github.com/m-lab/ndt-e2e-clientworker.git
 
 # Path to client_wrapper executable in NDT E2E Client Worker.
 client_wrapper_path: client_wrapper/client_wrapper.py
+
+# Directory on the control node in which to put archive zips collected from
+# remote nodes.
+local_archive_dir: /tmp/ansible-out
+
+# The default number of iterations to run each NDT client.
+iterations: 1

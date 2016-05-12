@@ -1,0 +1,165 @@
+---
+# vim:ft=ansible:
+
+- name: Configure facts shared by all nodes
+  hosts: all
+  tags: facts
+  tasks:
+    - name: create result archive filename
+      set_fact:
+        archive_file: ndt-results-{{ ansible_hostname | lower }}-{{ ansible_date_time.iso8601 | regex_replace(":", "") }}.zip
+
+- name: Configure facts for Windows hosts
+  hosts: windows
+  tags: facts
+  tasks:
+    - name: set supported browsers
+      set_fact:
+        supported_browsers:
+          - firefox
+          - chrome
+          # TODO(mtlynch): Uncomment when Edge automation is fixed.
+          # - edge
+
+    - name: set archive output path
+      set_fact:
+        archive_path: "{{ zipped_results_dir }}\\{{ archive_file }}"
+
+- name: Configure facts for Linux and OS X hosts
+  hosts:
+    - linux
+    - osx
+  tags: facts
+  tasks:
+    - name: set archive output path
+      set_fact:
+        archive_path: "{{ zipped_results_dir }}/{{ archive_file }}"
+
+- name: Configure facts for Linux hosts
+  hosts: linux
+  tags: facts
+  tasks:
+    - name: set supported browsers
+      set_fact:
+        supported_browsers:
+          - firefox
+          - chrome
+
+    - name: set environment variables
+      set_fact:
+        environment_vars:
+          PATH: "{{ ansible_env.PATH }}:{{ selenium_drivers_path }}"
+          DISPLAY: "{{ virtual_display }}"
+
+- name: Configure facts for OS X hosts
+  hosts: osx
+  tags: facts
+  tasks:
+    - name: set supported browsers
+      set_fact:
+        supported_browsers:
+          - firefox
+          - chrome
+          # TODO(mtlynch): Uncomment when Safari automation is fixed.
+          # - safari
+
+    - name: set environment variables
+      set_fact:
+        environment_vars:
+          PATH: "{{ ansible_env.PATH }}:{{ selenium_drivers_path }}:{{ mitmproxy_install_dir }}"
+
+# It is currently not possible to use the same play for all hosts:
+#  * The shell and command modules are unavailable on Windows.
+#  * We can't use the raw module on Linux/OS X and still set the environment
+#    variables.
+# Until Ansible has support for shell/command modules on Windows, this needs
+# to be a separate play.
+- name: Run NDT E2E Client Wrapper on Windows
+  hosts: windows
+  serial: 1
+  tasks:
+    - name: run html5 client wrapper
+      tags: html5
+      raw: >
+        python {{ ndt_e2e_client_dir }}\{{ client_wrapper_path }}
+        --client=ndt_js
+        --browser={{ item }}
+        --client_url={{ ndt_server_url }}
+        --output={{ raw_results_dir }}
+        --iterations={{ iterations }}
+      with_items: "{{ supported_browsers }}"
+
+    - name: run banjo wrapper
+      tags: banjo
+      raw: >
+        python {{ ndt_e2e_client_dir }}\{{ client_wrapper_path }}
+        --client=banjo
+        --browser=chrome
+        --server={{ ndt_server_fqdn }}
+        --client_path={{ http_replay_dir }}/{{ http_replay_file }}
+        --output={{ raw_results_dir }}
+        --iterations={{ iterations }}
+      with_items: "{{ supported_browsers }}"
+
+- name: Run NDT E2E Client Wrapper on Linux and OS X
+  hosts:
+    - linux
+    - osx
+  serial: 1
+  tasks:
+    - name: run html5 client wrapper
+      tags: html5
+      environment: "{{ environment_vars }}"
+      shell: >
+        python {{ ndt_e2e_client_dir }}/{{ client_wrapper_path }}
+        --client=ndt_js
+        --browser={{ item }}
+        --client_url={{ ndt_server_url }}
+        --output={{ raw_results_dir }}
+        --iterations={{ iterations }}
+      with_items: "{{ supported_browsers }}"
+
+    - name: run banjo wrapper
+      tags: banjo
+      environment: "{{ environment_vars }}"
+      shell: >
+        python {{ ndt_e2e_client_dir }}/{{ client_wrapper_path }}
+        --client=banjo
+        --browser={{ item }}
+        --server={{ ndt_server_fqdn }}
+        --client_path={{ http_replay_dir }}/{{ http_replay_file }}
+        --output={{ raw_results_dir }}
+        --iterations={{ iterations }}
+      with_items: "{{ supported_browsers }}"
+
+- name: Package NDT E2E results on Windows hosts
+  hosts: windows
+  tags: gather
+  tasks:
+    - name: zip results
+      raw: Compress-Archive -Path {{ raw_results_dir }}\\* -DestinationPath {{ archive_path }} -Force
+
+    - name: move to archive folder
+      raw: "Move-Item {{ raw_results_dir }}\\* {{ archived_results_dir }}"
+
+- name: Package NDT E2E results on Linux/OS X hosts
+  hosts:
+    - linux
+    - osx
+  tags: gather
+  tasks:
+    - name: zip results
+      shell: cd {{ raw_results_dir }}; find . | zip {{ archive_path }} -@
+
+    - name: move raw results to archive folder
+      shell: mv {{ raw_results_dir }}/* {{ archived_results_dir }}
+
+- name: Fetch NDT E2E results and copy them locally
+  hosts: all
+  tags: gather
+  tasks:
+    - name: get NDT E2E results
+      fetch: src={{ archive_path }}
+             dest={{ local_archive_dir }}/{{ archive_file }}
+             flat=yes
+             fail_on_missing=yes
