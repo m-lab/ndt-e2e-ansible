@@ -295,6 +295,7 @@
       tags: selenium-chrome
       unarchive: src={{ selenium_chrome_driver_url }}
                  dest={{ selenium_drivers_path }}
+                 owner={{ ansible_user }}
                  copy=no
       register: selenium_chrome_install
 
