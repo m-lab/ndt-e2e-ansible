@@ -1,0 +1,23 @@
+---
+# vim:ft=ansible:
+
+- name: Configure control nodes to access the testbed
+  hosts: localhost
+  become: True
+  become_method: sudo
+  become_user: root
+  tasks:
+    - name: Add testbed nodes to hosts file
+      blockinfile:
+        dest: /etc/hosts
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - M-Lab Testbed"
+        block: |
+          172.16.1.27        mlab-linux-mini
+          172.16.1.28        mlab-mac-mountainlion
+          172.16.1.29        mlab-mac-yosemite
+          172.16.1.30        mlab-mac-capitan
+          172.16.1.31        mlab-wdoze7
+          172.16.1.32        mlab-wdoze8
+          172.16.1.33        mlab-wdoze10
+          172.16.1.34        mlab-testmaster
+          172.16.1.35        mlabmeddlebox
