@@ -1,18 +1,40 @@
 # ndt-e2e-ansible
 Ansible playbooks for NDT E2E Testing system
 
+## Overview
+
+These playbooks automate end-to-end testing of NDT, including:
+
+* Provisioning nodes for NDT end-to-end testing
+* Executing NDT end-to-end tests
+* Gathering test results and copying them back to the control machine
+
+Configurations include:
+
+* Control Machine - prepares the control machine to facilitate management of
+  nodes in the NDT testbed
+* Testbed Nodes - provisions nodes in the testbed for end-to-end testing.
+
+Test execution options include:
+
+* Run NDT using single client or multiple clients.
+* Run a single iteration for each configuration or N iterations.
+* Run all NDT tests that fit given client conditions (e.g. OS type, browser
+  type).
+
 ## Pre-Requisites
 
 The user must:
 
-* Have Ansible installed on their machine (preferably the [latest source version](http://docs.ansible.com/ansible/intro_installation.html#running-from-source)).
+* Have Ansible installed on their control machine (preferably the
+[latest source version](http://docs.ansible.com/ansible/intro_installation.html#running-from-source)).
 * Have access to the M-Lab testbed
 
 ## Getting Started
 
-### Configuring the control node
+### Configuring the control machine
 
-To configure the control node to manage the machines in the testbed, run the
+To configure the control machine to manage the machines in the testbed, run the
 following command:
 
 ```bash
@@ -42,8 +64,8 @@ times on the same node is safe.
 The following are examples of ways to perform tests and collect results using
 the test execution playbook.
 
-In all examples, the test results will appear on the control node in the folder
-specified by the `local_archive_dir` variable.
+In all examples, the test results will appear on the control machine in the
+folder specified by the `local_archive_dir` variable.
 
 ##### Run a single test iteration under all configurations
 
