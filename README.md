@@ -34,8 +34,10 @@ The user must:
 
 ### Configuring the control machine
 
-To configure the control machine to manage the machines in the testbed, run the
-following command:
+The "control machine" in Ansible terms is the machine from which the operator
+runs Ansible commands and executes playbooks. To configure your machine to be a
+control machine for the NDT E2E testing playbooks so that you can manage the
+M-Lab NDT testbed, run the following command from your local machine:
 
 ```bash
 ansible-playbook configure_control.yml
