@@ -6,7 +6,7 @@
   tags: facts
   vars:
     hostname: "{{ ansible_hostname | lower }}"
-    datetime: "{{ ansible_date_time.iso8601 | regex_replace(":", "") }}"
+    datetime: "{{ ansible_date_time.iso8601 | regex_replace(':', '') }}"
   tasks:
     - name: create result archive filename
       set_fact:
