@@ -1,8 +1,8 @@
 [windows]
-mlab-wdoze10
+mlab-win10
 # Not yet in active use.
-#mlab-wdoze8
-#mlab-wdoze7
+#mlab-win8
+#mlab-win7
 
 [windows:vars]
 ansible_connection=winrm
