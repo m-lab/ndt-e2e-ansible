@@ -12,6 +12,10 @@
       set_fact:
         archive_file: ndt-results-{{ hostname }}-{{ datetime }}.zip
 
+    - name: create log filename
+      set_fact:
+        log_file: client_wrapper-{{ hostname }}-{{ datetime }}.log
+
 - name: Configure facts for Windows hosts
   hosts: windows
   tags: facts
@@ -28,6 +32,10 @@
       set_fact:
         archive_path: "{{ zipped_results_dir }}\\{{ archive_file }}"
 
+    - name: set log path
+      set_fact:
+        log_path: "{{ results_log_dir }}\\{{ log_file }}"
+
 - name: Configure facts for Linux and OS X hosts
   hosts:
     - linux
@@ -37,6 +45,10 @@
     - name: set archive output path
       set_fact:
         archive_path: "{{ zipped_results_dir }}/{{ archive_file }}"
+
+    - name: set log path
+      set_fact:
+        log_path: "{{ results_log_dir }}/{{ log_file }}"
 
 - name: Configure facts for Linux hosts
   hosts: linux
@@ -81,10 +93,13 @@
   hosts: windows
   serial: 1
   tasks:
+    # TODO(mtlynch): Figure out why the command fails if we redirect stderr to
+    # a file.
     - name: run html5 client wrapper
       tags: html5
       raw: >
         python {{ ndt_e2e_client_dir }}\{{ client_wrapper_path }}
+        --verbose
         --client=ndt_js
         --browser={{ item }}
         --client_url={{ ndt_server_url }}
@@ -96,6 +111,7 @@
       tags: banjo
       raw: >
         python {{ ndt_e2e_client_dir }}\{{ client_wrapper_path }}
+        --verbose
         --client=banjo
         --browser={{ item }}
         --server={{ ndt_server_fqdn }}
@@ -115,11 +131,12 @@
       environment: "{{ environment_vars }}"
       shell: >
         python {{ ndt_e2e_client_dir }}/{{ client_wrapper_path }}
+        --verbose
         --client=ndt_js
         --browser={{ item }}
         --client_url={{ ndt_server_url }}
         --output={{ raw_results_dir }}
-        --iterations={{ iterations }}
+        --iterations={{ iterations }} 2>&1 | tee -a {{ log_path }}
       with_items: "{{ supported_browsers }}"
 
     - name: run banjo wrapper
@@ -127,12 +144,13 @@
       environment: "{{ environment_vars }}"
       shell: >
         python {{ ndt_e2e_client_dir }}/{{ client_wrapper_path }}
+        --verbose
         --client=banjo
         --browser={{ item }}
         --server={{ ndt_server_fqdn }}
         --client_path={{ http_replay_dir }}/{{ http_replay_file }}
         --output={{ raw_results_dir }}
-        --iterations={{ iterations }}
+        --iterations={{ iterations }} 2>&1 | tee -a {{ log_path }}
       with_items: "{{ supported_browsers }}"
 
 - name: Package NDT E2E results on Windows hosts
@@ -140,7 +158,7 @@
   tags: gather
   tasks:
     - name: zip results
-      raw: Compress-Archive -Path {{ raw_results_dir }}\\* -DestinationPath {{ archive_path }} -Force
+      raw: Compress-Archive -Path {{ raw_results_dir }}\\*,{{ results_log_dir }}\\* -DestinationPath {{ archive_path }} -Force
 
     - name: move all raw files to an archive folder of already packaged files
       raw: "Move-Item {{ raw_results_dir }}\\* {{ archived_results_dir }}"
@@ -153,6 +171,9 @@
   tasks:
     - name: zip results
       shell: cd {{ raw_results_dir }}; find . | zip {{ archive_path }} -@
+
+    - name: add log to result zip
+      shell: cd {{ results_log_dir }}; find . | zip {{ archive_path }} -@
 
     - name: move all raw files to an archive folder of already packaged files
       shell: mv {{ raw_results_dir }}/* {{ archived_results_dir }}

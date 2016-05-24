@@ -219,6 +219,7 @@
         - "{{ raw_results_dir }}"
         - "{{ zipped_results_dir }}"
         - "{{ archived_results_dir }}"
+        - "{{ results_log_dir }}"
 
     # TODO(mtlynch): Make idempotent
     - name: download WMF5
@@ -339,6 +340,7 @@
         - "{{ raw_results_dir }}"
         - "{{ zipped_results_dir }}"
         - "{{ archived_results_dir }}"
+        - "{{ results_log_dir }}"
 
 - name: Install NDT client wrapper and all dependencies on OS X client machines
   hosts: osx
@@ -477,3 +479,4 @@
         - "{{ raw_results_dir }}"
         - "{{ zipped_results_dir }}"
         - "{{ archived_results_dir }}"
+        - "{{ results_log_dir }}"
