@@ -15,3 +15,4 @@ results_dir: /opt/ndt-results
 raw_results_dir: "{{ results_dir }}/raw"
 zipped_results_dir: "{{ results_dir }}/zips"
 archived_results_dir: "{{ results_dir }}/archived"
+results_log_dir: "{{ results_dir }}/logs"
