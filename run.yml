@@ -94,7 +94,7 @@
   serial: 1
   tasks:
     # We need to use the cmd.exe to process the executable because otherwise
-    # PowerShell will throuw output to stderr as exceptions.
+    # PowerShell will create exceptions out of any output to stderr.
     # See: http://chuchuva.com/pavel/2010/03/how-to-redirect-output-of-console-program-to-a-file-in-powershell/
     - name: run html5 client wrapper
       tags: html5
