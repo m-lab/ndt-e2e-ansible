@@ -93,31 +93,32 @@
   hosts: windows
   serial: 1
   tasks:
-    # TODO(mtlynch): Figure out why the command fails if we redirect stderr to
-    # a file.
+    # We need to use the cmd.exe to process the executable because otherwise
+    # PowerShell will throuw output to stderr as exceptions.
+    # See: http://chuchuva.com/pavel/2010/03/how-to-redirect-output-of-console-program-to-a-file-in-powershell/
     - name: run html5 client wrapper
       tags: html5
       raw: >
-        python {{ ndt_e2e_client_dir }}\{{ client_wrapper_path }}
+        cmd /c python {{ ndt_e2e_client_dir }}\{{ client_wrapper_path }}
         --verbose
         --client=ndt_js
         --browser={{ item }}
         --client_url={{ ndt_server_url }}
         --output={{ raw_results_dir }}
-        --iterations={{ iterations }}
+        --iterations={{ iterations }} `>`> {{ log_path }} 2`>`&1
       with_items: "{{ supported_browsers }}"
 
     - name: run banjo wrapper
       tags: banjo
       raw: >
-        python {{ ndt_e2e_client_dir }}\{{ client_wrapper_path }}
+        cmd /c python {{ ndt_e2e_client_dir }}\{{ client_wrapper_path }}
         --verbose
         --client=banjo
         --browser={{ item }}
         --server={{ ndt_server_fqdn }}
         --client_path={{ http_replay_dir }}/{{ http_replay_file }}
         --output={{ raw_results_dir }}
-        --iterations={{ iterations }}
+        --iterations={{ iterations }} `>`> {{ log_path }} 2`>`&1
       with_items: "{{ supported_browsers }}"
 
 - name: Run NDT E2E Client Wrapper on Linux and OS X
@@ -157,11 +158,17 @@
   hosts: windows
   tags: gather
   tasks:
-    - name: zip results
-      raw: Compress-Archive -Path {{ raw_results_dir }}\\*,{{ results_log_dir }}\\* -DestinationPath {{ archive_path }} -Force
+    - name: zip results and logs
+      raw: Compress-Archive -Path {{ item }}\\* -Update -DestinationPath {{ archive_path }}
+      with_items:
+        - "{{ raw_results_dir }}"
+        - "{{ results_log_dir }}"
 
-    - name: move all raw files to an archive folder of already packaged files
-      raw: "Move-Item {{ raw_results_dir }}\\* {{ archived_results_dir }}"
+    - name: move all result and log files to an archive folder of already packaged files
+      raw: "Move-Item {{ item }}\\* {{ archived_results_dir }}"
+      with_items:
+        - "{{ raw_results_dir }}"
+        - "{{ results_log_dir }}"
 
 - name: Package NDT E2E results on Linux/OS X hosts
   hosts:
@@ -169,14 +176,17 @@
     - osx
   tags: gather
   tasks:
-    - name: zip results
-      shell: cd {{ raw_results_dir }}; find . | zip {{ archive_path }} -@
+    - name: zip results and logs
+      shell: cd {{ item }}; find . | zip {{ archive_path }} -@
+      with_items:
+        - "{{ raw_results_dir }}"
+        - "{{ results_log_dir }}"
 
-    - name: add log to result zip
-      shell: cd {{ results_log_dir }}; find . | zip {{ archive_path }} -@
-
-    - name: move all raw files to an archive folder of already packaged files
-      shell: mv {{ raw_results_dir }}/* {{ archived_results_dir }}
+    - name: move all result and log files to an archive folder of already packaged files
+      shell: mv {{ item }}/* {{ archived_results_dir }}
+      with_items:
+        - "{{ raw_results_dir }}"
+        - "{{ results_log_dir }}"
 
 - name: Fetch NDT E2E results and copy them locally
   hosts: all
