@@ -159,13 +159,9 @@
   tags: gather
   tasks:
     - name: zip results and logs
-      raw: Compress-Archive -Path {{ item }}\\* -Update -DestinationPath {{ archive_path }}
-      with_items:
-        - "{{ raw_results_dir }}"
-        - "{{ results_log_dir }}"
-
-    - name: move all result and log files to an archive folder of already packaged files
-      raw: "Move-Item {{ item }}\\* {{ archived_results_dir }}"
+      raw: Compress-Archive -Path {{ item }}\* -Update -DestinationPath {{ archive_path }}
+      register: zip_result
+      failed_when: "'Error' in zip_result.stderr"
       with_items:
         - "{{ raw_results_dir }}"
         - "{{ results_log_dir }}"
@@ -182,12 +178,6 @@
         - "{{ raw_results_dir }}"
         - "{{ results_log_dir }}"
 
-    - name: move all result and log files to an archive folder of already packaged files
-      shell: mv {{ item }}/* {{ archived_results_dir }}
-      with_items:
-        - "{{ raw_results_dir }}"
-        - "{{ results_log_dir }}"
-
 - name: Fetch NDT E2E results and copy them locally
   hosts: all
   tags: gather
@@ -197,3 +187,25 @@
              dest={{ local_archive_dir }}/{{ archive_file }}
              flat=yes
              fail_on_missing=yes
+
+- name: Archive NDT E2E results on Windows hosts
+  hosts: windows
+  tags: gather
+  tasks:
+    - name: move all result and log files to an archive folder of already packaged files
+      raw: "Move-Item {{ item }}\\* {{ archived_results_dir }} -Force"
+      with_items:
+        - "{{ raw_results_dir }}"
+        - "{{ results_log_dir }}"
+
+- name: Archive NDT E2E results on Linux/OS X hosts
+  hosts:
+    - linux
+    - osx
+  tags: gather
+  tasks:
+    - name: move all result and log files to an archive folder of already packaged files
+      shell: mv {{ item }}/* {{ archived_results_dir }}
+      with_items:
+        - "{{ raw_results_dir }}"
+        - "{{ results_log_dir }}"
