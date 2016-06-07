@@ -106,6 +106,13 @@ ansible-playbook run.yml \
   --extra-vars "iterations=50"
 ```
 
+##### Perform 50 test iterations on each node, traffic throttled to 25 Mbps
+
+```bash
+ansible-playbook run.yml \
+  --extra-vars "iterations=50 throttle_mbps=25"
+```
+
 ##### Perform 50 test iterations on a single node with a specific configuration
 
 This is a more advanced example. It runs:
@@ -119,5 +126,18 @@ This is a more advanced example. It runs:
 ansible-playbook run.yml \
   -l mlab-mac-capitan \
   --extra-vars "supported_browsers=chrome iterations=50" \
-  --tags "facts,html5,gather"
+  --tags "facts,throttle,html5,gather"
+```
+
+### Just configure meddlebox throttling
+
+This configures the meddlebox to throttle traffic to the specified speed. This
+might be useful when configuring the testbed for manual testing. Be aware that
+these settings will be overwritten by any subsequent execution of the run.yml
+playbook:
+
+```bash
+ansible-playbook run.yml \
+  --extra-vars "throttle_mbps=50" \
+  --tags "facts,throttle"
 ```
