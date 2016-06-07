@@ -81,7 +81,7 @@
     - name: set environment variables
       set_fact:
         environment_vars:
-          PATH: "{{ ansible_env.PATH }}:{{ selenium_drivers_path }}:{{ mitmproxy_install_dir }}"
+          PATH: "{{ ansible_env.PATH }}:{{ selenium_drivers_path }}"
 
 # It is currently not possible to use the same play for all hosts:
 #  * The shell and command modules are unavailable on Windows.

@@ -13,6 +13,3 @@ raw_results_dir: "{{ results_dir }}/raw"
 zipped_results_dir: "{{ results_dir }}/zips"
 archived_results_dir: "{{ results_dir }}/archived"
 results_log_dir: "{{ results_dir }}/logs"
-
-# Install directory for mitmproxy utility.
-mitmproxy_install_dir: /opt/mitmproxy
