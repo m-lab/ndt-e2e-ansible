@@ -196,14 +196,6 @@
         http_proxy: "{{ http_proxy }}"
       raw: pip install -r "{{ ndt_e2e_client_dir }}\\requirements.txt"
 
-    # TODO(mtlynch): Figure out why this works locally but not remotely
-    - name: install mitmdump (part of mitmproxy)
-      tags: ndt-e2e
-      environment:
-        http_proxy: "{{ http_proxy }}"
-        https_proxy: "{{ http_proxy }}"
-      raw: pip install mitmproxy
-
     - name: create HTTP replay directory
       tags: ndt-e2e
       win_file: "path={{ http_replay_dir }} state=directory"
@@ -271,14 +263,6 @@
         - unzip
         - xvfb
         - zip
-        # Required for mitmproxy
-        - python-dev
-        - libffi-dev
-        - libssl-dev
-        - libxml2-dev
-        - libxslt1-dev
-        - libjpeg8-dev
-        - zlib1g-dev
 
     - name: install xvfb init.d daemon script
       tags: xvfb
@@ -316,10 +300,6 @@
     - name: Install ndt e2e requirements
       tags: ndt-e2e
       pip: requirements={{ ndt_e2e_client_dir }}/requirements.txt
-
-    - name: Install mitmproxy
-      tags: ndt-e2e
-      pip: name=mitmproxy
 
     - name: create HTTP replay directory
       tags: ndt-e2e
@@ -360,10 +340,6 @@
     git_installer_url: http://ufpr.dl.sourceforge.net/project/git-osx-installer/{{ git_installer_version }}.dmg
     git_installer_download_path: "{{ temp_dir }}/{{ git_installer_version }}.dmg"
     git_installer_image_name: /Volumes/Git 2.8.1 Mavericks Intel Universal
-
-    mitmproxy_version: 0.17.1
-    mitmproxy_url: https://github.com/mitmproxy/mitmproxy/releases/download/v{{ mitmproxy_version }}/mitmproxy-{{ mitmproxy_version }}-osx.tar.gz
-    mitmproxy_download_path: "{{ temp_dir }}/mitmproxy-{{ mitmproxy_version }}.tar.gz"
   become: True
   become_method: sudo
   become_user: root
@@ -415,26 +391,6 @@
 
     - name: unmount Git installer dmg file
       shell: hdiutil detach "{{ git_installer_image_name }}/"
-
-    - name: download mitmproxy
-      become_user: "{{ ansible_user }}"
-      tags: mitmproxy
-      get_url: url={{ mitmproxy_url }} dest={{ mitmproxy_download_path }}
-      register: mitmproxy_download
-
-    - name: create mitmproxy directory
-      tags: mitmproxy
-      file: path={{ mitmproxy_install_dir }}
-            state=directory
-            owner={{ ansible_user }}
-
-    # TODO(mtlynch): Switch to unarchive module once issue #15754 is fixed:
-    # https://github.com/ansible/ansible/issues/15754
-    - name: unarchive mitmproxy
-      become_user: "{{ ansible_user }}"
-      tags: mitmproxy
-      shell: tar -xvzf {{ mitmproxy_download_path }} -C {{ mitmproxy_install_dir }}
-      when: mitmproxy_download.changed
 
     - name: install pip
       tags: pip
