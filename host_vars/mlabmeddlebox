@@ -1,0 +1,5 @@
+# Traffic shaping policy to apply to traffic through the meddlebox.
+shaping_policy: htb
+
+# Default rate at which to throttle network speed.
+throttle_mbps: 100

@@ -55,7 +55,7 @@ ansible-playbook prepare.yml
 To provision a single testbed node (e.g. `mlab-linux-mini`), run the following:
 
 ```bash
-ansible-playbook prepare.yml -l mlab-linux-mini
+ansible-playbook prepare.yml --limit mlab-linux-mini
 ```
 
 The provisioning is idempotent, so running the provisioning script multiple
@@ -80,29 +80,34 @@ ansible-playbook run.yml
 
 ##### Run a single test on a single node
 
+Note: We always include mlabmeddlebox so that traffic shaping rules are
+enforced.
+
 ```bash
-ansible-playbook run.yml -l mlab-linux-mini
+ansible-playbook run.yml --limit mlab-linux-mini:mlabmeddlebox
 ```
 
 ##### Run a single test on all OS X nodes
 
 ```bash
-ansible-playbook run.yml -l osx
+ansible-playbook run.yml --limit osx:mlabmeddlebox
 ```
 
-##### Run only the NDT HTML5 reference client on a single node
+##### Run on a single node, but skip the banjo client
 
-This performs tests on a single node using only the NDT HTML5 reference client:
+This performs tests on a single node, but  using only the NDT HTML5 reference client:
 
 ```bash
-ansible-playbook run.yml -l mlab-linux-mini --tags "facts,html5,gather"
+ansible-playbook run.yml \
+  --limit mlab-linux-mini:mlabmeddlebox \
+  --skip-tags "banjo"
 ```
 
 ##### Perform 50 test iterations on a single node
 
 ```bash
 ansible-playbook run.yml \
-  -l mlab-linux-mini \
+  --limit mlab-linux-mini:mlabmeddlebox \
   --extra-vars "iterations=50"
 ```
 
@@ -118,15 +123,15 @@ ansible-playbook run.yml \
 This is a more advanced example. It runs:
 
 * 50 test iterations
-* using only the NDT HTML5 reference client
+* excluding the Banjo client
 * only under the Chrome browser
 * on the mlab-mac-capitan remote node
 
 ```bash
 ansible-playbook run.yml \
-  -l mlab-mac-capitan \
+  --limit mlab-mac-capitan:mlabmeddlebox \
   --extra-vars "supported_browsers=chrome iterations=50" \
-  --tags "facts,throttle,html5,gather"
+  --skip-tags "banjo"
 ```
 
 ### Just configure meddlebox throttling

@@ -1,35 +1,21 @@
 ---
 # vim:ft=ansible:
 
-- name: Configure facts related to traffic shaping
-  hosts: all
-  tags: facts
-  vars:
-    throttle_mbps: 100
-  tasks:
-    - name: define meddlebox traffic shaping policy
-      set_fact:
-        shaping_policy: htb
-
-    - name: define meddlebox traffic shaping policy
-      set_fact:
-        shaping_params: rate {{ throttle_mbps }}mbit
-
-- name: Configure facts shared by all nodes
-  hosts: all
+- name: Configure facts shared by all client worker nodes
+  hosts: clients
   tags: facts
   vars:
     hostname: "{{ ansible_hostname | lower }}"
     datetime: "{{ ansible_date_time.iso8601 | regex_replace(':', '') }}"
-    shaping_collapsed: "{{ shaping_policy }}-{{ shaping_params | regex_replace(' ', '') }}"
+    shaping_summary: "{{ hostvars['mlabmeddlebox']['shaping_policy'] }}-{{ hostvars['mlabmeddlebox']['throttle_mbps'] }}Mbps"
   tasks:
     - name: create result archive filename
       set_fact:
-        archive_file: ndt-results-{{ hostname }}-{{shaping_collapsed}}-{{ datetime }}.zip
+        archive_file: ndt-results-{{ hostname }}-{{ shaping_summary }}-{{ datetime }}.zip
 
     - name: create log filename
       set_fact:
-        log_file: client_wrapper-{{ hostname }}-{{ shaping_collapsed }}-{{ datetime }}.log
+        log_file: client_wrapper-{{ hostname }}-{{ shaping_summary }}-{{ datetime }}.log
 
 - name: Configure facts for Windows hosts
   hosts: windows
@@ -117,7 +103,7 @@
     - name: configure meddlebox traffic shaping rules
       shell: |
         tc qdisc add dev {{ item }} root handle 1: {{ shaping_policy }} default 1 && \
-        tc class add dev {{ item }} parent 1: classid 1:1 {{ shaping_policy }} {{ shaping_params }}
+        tc class add dev {{ item }} parent 1: classid 1:1 {{ shaping_policy }} rate {{ throttle_mbps }}mbit
       with_items:
         - em1
         - em2
@@ -218,10 +204,7 @@
         - "{{ results_log_dir }}"
 
 - name: Fetch NDT E2E results and copy them locally
-  hosts:
-    - linux
-    - osx
-    - windows
+  hosts: clients
   tags: gather
   tasks:
     - name: get NDT E2E result zip package
