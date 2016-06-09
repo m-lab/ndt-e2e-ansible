@@ -1,3 +1,6 @@
+# Testbed Middlebox
+mlabmeddlebox
+
 [windows]
 mlab-win10
 # Not yet in active use.
@@ -21,10 +24,17 @@ mlab-mac-capitan
 #mlab-mac-yosemite
 #mlab-mac-mountainlion
 
-[all:vars]
+[clients:children]
+windows
+linux
+osx
+
+[clients:vars]
 http_proxy=http://172.16.1.1:8080
 ndt_server_fqdn=ndt.iupui.mlab2.iad0t.measurement-lab.org
 ndt_server_url=http://{{ ndt_server_fqdn }}:7123/
+
+[all:vars]
 # Note: The username and password are *not* secret and are safe to publish. The
 # credentials are not useful unless the user already has access to the testbed,
 # and there are no trust boundaries within the testbed itself.

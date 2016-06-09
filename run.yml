@@ -1,20 +1,21 @@
 ---
 # vim:ft=ansible:
 
-- name: Configure facts shared by all nodes
-  hosts: all
+- name: Configure facts shared by all client worker nodes
+  hosts: clients
   tags: facts
   vars:
     hostname: "{{ ansible_hostname | lower }}"
     datetime: "{{ ansible_date_time.iso8601 | regex_replace(':', '') }}"
+    shaping_summary: "{{ hostvars['mlabmeddlebox']['shaping_policy'] }}-{{ hostvars['mlabmeddlebox']['throttle_mbps'] }}Mbps"
   tasks:
     - name: create result archive filename
       set_fact:
-        archive_file: ndt-results-{{ hostname }}-{{ datetime }}.zip
+        archive_file: ndt-results-{{ hostname }}-{{ shaping_summary }}-{{ datetime }}.zip
 
     - name: create log filename
       set_fact:
-        log_file: client_wrapper-{{ hostname }}-{{ datetime }}.log
+        log_file: client_wrapper-{{ hostname }}-{{ shaping_summary }}-{{ datetime }}.log
 
 - name: Configure facts for Windows hosts
   hosts: windows
@@ -82,6 +83,30 @@
       set_fact:
         environment_vars:
           PATH: "{{ ansible_env.PATH }}:{{ selenium_drivers_path }}"
+
+- name: Configure meddlebox for testing
+  hosts: mlabmeddlebox
+  become: True
+  become_method: sudo
+  become_user: root
+  tags: throttle
+  tasks:
+    - name: delete existing meddlebox traffic shaping rules
+      shell: tc qdisc del dev {{ item }} root
+      register: delete_result
+      # "No such file or directory" means there was no existing rule.
+      failed_when: "delete_result.rc != 0 and 'No such file or directory' not in delete_result.stderr"
+      with_items:
+        - em1
+        - em2
+
+    - name: configure meddlebox traffic shaping rules
+      shell: |
+        tc qdisc add dev {{ item }} root handle 1: {{ shaping_policy }} default 1 && \
+        tc class add dev {{ item }} parent 1: classid 1:1 {{ shaping_policy }} rate {{ throttle_mbps }}mbit
+      with_items:
+        - em1
+        - em2
 
 # It is currently not possible to use the same play for all hosts:
 #  * The shell and command modules are unavailable on Windows.
@@ -179,7 +204,7 @@
         - "{{ results_log_dir }}"
 
 - name: Fetch NDT E2E results and copy them locally
-  hosts: all
+  hosts: clients
   tags: gather
   tasks:
     - name: get NDT E2E result zip package
