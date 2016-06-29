@@ -1,4 +1,5 @@
 # Testbed router
+[lockjaw]
 lockjaw ansible_user=root
 
 # Testbed Middlebox
