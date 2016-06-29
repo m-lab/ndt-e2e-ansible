@@ -1,6 +1,12 @@
 ---
 # vim:ft=ansible:
 
+- name: Configure lockjaw for testing
+  hosts: lockjaw
+  tasks:
+    - name: Ensure NIC is configured for its maximum speed (1 Gbps)
+      shell: ethtool -s eth5 speed 1000 duplex full
+
 - name: Install NDT client wrapper and all dependencies on Windows client machines
   hosts: windows
   vars:

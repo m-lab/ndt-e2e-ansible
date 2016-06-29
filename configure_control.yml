@@ -12,6 +12,7 @@
         dest: /etc/hosts
         marker: "# {mark} ANSIBLE MANAGED BLOCK - M-Lab Testbed"
         block: |
+          172.16.1.1         lockjaw
           172.16.1.27        mlab-linux-mini
           172.16.1.28        mlab-mac-mountainlion
           172.16.1.29        mlab-mac-yosemite

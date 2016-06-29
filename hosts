@@ -1,4 +1,8 @@
+# Tested router
+lockjaw ansible_user=root
+
 # Testbed Middlebox
+[mlabmeddlebox]
 mlabmeddlebox
 
 [windows]
@@ -34,7 +38,13 @@ http_proxy=http://172.16.1.1:8080
 ndt_server_fqdn=ndt.iupui.mlab2.iad0t.measurement-lab.org
 ndt_server_url=http://{{ ndt_server_fqdn }}:7123/
 
-[all:vars]
+# All nodes internal to the testbed (excludes lockjaw, which is
+# Internet-facing).
+[internal:children]
+clients
+mlabmeddlebox
+
+[internal:vars]
 # Note: The username and password are *not* secret and are safe to publish. The
 # credentials are not useful unless the user already has access to the testbed,
 # and there are no trust boundaries within the testbed itself.
