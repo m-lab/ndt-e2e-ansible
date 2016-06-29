@@ -40,7 +40,7 @@ control machine for the NDT E2E testing playbooks so that you can manage the
 M-Lab NDT testbed, run the following command from your local machine:
 
 ```bash
-ansible-playbook configure_control.yml
+ansible-playbook configure_control.yml --ask-sudo-pass
 ```
 
 ### Provisioning client worker nodes
