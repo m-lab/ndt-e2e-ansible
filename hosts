@@ -37,7 +37,6 @@ osx
 [clients:vars]
 http_proxy=http://172.16.1.1:8080
 ndt_server_fqdn=ndt.iupui.mlab2.iad0t.measurement-lab.org
-ndt_server_url=http://{{ ndt_server_fqdn }}:7123/
 
 # All nodes internal to the testbed (excludes lockjaw, which is
 # Internet-facing).
