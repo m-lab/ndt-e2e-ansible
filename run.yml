@@ -128,7 +128,7 @@
         --verbose
         --client=ndt_js
         --browser={{ item }}
-        --client_url={{ ndt_server_url }}
+        --server={{ ndt_server_fqdn }}
         --output={{ raw_results_dir }}
         --iterations={{ iterations }} `>`> {{ log_path }} 2`>`&1
       with_items: "{{ supported_browsers }}"
@@ -160,7 +160,7 @@
         --verbose
         --client=ndt_js
         --browser={{ item }}
-        --client_url={{ ndt_server_url }}
+        --server={{ ndt_server_fqdn }}
         --output={{ raw_results_dir }}
         --iterations={{ iterations }} 2>&1 | tee -a {{ log_path }}
       with_items: "{{ supported_browsers }}"
