@@ -186,7 +186,7 @@
       tags: ndt-e2e
       environment:
         http_proxy: "{{ http_proxy }}"
-      raw: "git clone {{ ndt_e2e_client_git }} {{ ndt_e2e_client_dir }}"
+      raw: "git clone --branch master {{ ndt_e2e_client_git }} {{ ndt_e2e_client_dir }}"
       when: not ndt_e2e_path_info.stat.exists
 
     - name: update NDT E2E client worker source
@@ -372,7 +372,7 @@
     - name: unarchive Selenium Chrome driver
       become_user: "{{ ansible_user }}"
       tags: selenium-chrome
-      shell: unzip {{ selenium_chrome_download_path }} -o -d {{ selenium_drivers_path }}
+      shell: unzip -o {{ selenium_chrome_download_path }} -d {{ selenium_drivers_path }}
       when: download_selenium_chrome.changed
 
     - name: download Selenium Safari driver
@@ -413,6 +413,7 @@
       git: repo={{ ndt_e2e_client_git }}
            dest={{ ndt_e2e_client_dir }}
            update=yes
+           version=master
       become_user: "{{ ansible_user }}"
 
     - name: Install ndt e2e requirements
