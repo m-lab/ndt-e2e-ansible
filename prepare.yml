@@ -372,7 +372,7 @@
     - name: unarchive Selenium Chrome driver
       become_user: "{{ ansible_user }}"
       tags: selenium-chrome
-      shell: unzip -o {{ selenium_chrome_download_path }} -d {{ selenium_drivers_path }}
+      shell: unzip {{ selenium_chrome_download_path }} -o -d {{ selenium_drivers_path }}
       when: download_selenium_chrome.changed
 
     - name: download Selenium Safari driver
