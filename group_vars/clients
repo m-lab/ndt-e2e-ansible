@@ -3,7 +3,7 @@ local_http_replay_dir: http_replays
 
 # HTTP replay file for Banjo client (note that this file is not in this git
 # repo and must be generated or copied by an alternative means).
-http_replay_file: replay-banjo-2016-06-07.yaml
+http_replay_file: replay-onebox.yaml
 
 # Git URL for NDT E2E Client Worker.
 ndt_e2e_client_git: https://github.com/m-lab/ndt-e2e-clientworker.git
