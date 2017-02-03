@@ -340,12 +340,21 @@
     selenium_safari_driver_url: http://selenium-release.storage.googleapis.com/2.48/SafariDriver.safariextz
     selenium_safari_download_path: "{{ temp_dir }}/SafariDriver.safariextz"
 
+    selenium_server_jar_url: "http://selenium-release.storage.googleapis.com/2.53/{{ selenium_server_jar_file }}"
+    selenium_server_jar_path: "{{ selenium_drivers_path }}/{{ selenium_server_jar_file }}"
+
     # Named mavericks, but works on El Capitan.
     # TODO(mtlynch): Verify this package works on Mountain Lion.
     git_installer_version: git-2.8.1-intel-universal-mavericks
     git_installer_url: http://ufpr.dl.sourceforge.net/project/git-osx-installer/{{ git_installer_version }}.dmg
     git_installer_download_path: "{{ temp_dir }}/{{ git_installer_version }}.dmg"
     git_installer_image_name: /Volumes/Git 2.8.1 Mavericks Intel Universal
+
+    jdk_installer_version: jdk-8u121-macosx-x64
+    jdk_installer_url: "http://mirror.measurementlab.net/misc/{{ jdk_installer_version }}.dmg"
+    jdk_installer_download_path: "{{ temp_dir }}/{{ jdk_installer_version }}.dmg"
+    jdk_installer_image_name: JDK 8 Update 121
+
   become: True
   become_method: sudo
   become_user: root
@@ -366,6 +375,13 @@
       get_url: url={{ selenium_chrome_driver_url }}
                dest={{ selenium_chrome_download_path }}
       register: download_selenium_chrome
+
+    - name: download Selenium server jar
+      become_user: "{{ ansible_user }}"
+      tags: selenium-jar
+      get_url: url={{ selenium_server_jar_url }}
+               dest={{ selenium_server_jar_path }}
+      register: download_selenium_jar
 
     # TODO(mtlynch): Switch to unarchive module once issue #15754 is fixed:
     # https://github.com/ansible/ansible/issues/15754
@@ -397,6 +413,20 @@
 
     - name: unmount Git installer dmg file
       shell: hdiutil detach "{{ git_installer_image_name }}/"
+
+    - name: download JDK installer for OS X
+      become_user: "{{ ansible_user }}"
+      get_url: url={{ jdk_installer_url }}
+               dest={{ jdk_installer_download_path }}
+
+    - name: mount JDK installer dmg file
+      shell: hdiutil attach {{ jdk_installer_download_path }}
+
+    - name: install JDK
+      shell: installer -package "/Volumes/{{ jdk_installer_image_name }}/{{ jdk_installer_image_name }}.pkg" -target /
+
+    - name: unmount JDK installer dmg file
+      shell: hdiutil detach "/Volumes/{{ jdk_installer_image_name }}/"
 
     - name: install pip
       tags: pip
