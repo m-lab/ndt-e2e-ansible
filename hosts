@@ -24,7 +24,7 @@ ansible_winrm_server_cert_validation=ignore
 mlab-linux-mini
 
 [osx]
-mlab-mac-capitan
+mlab-mac-sierra
 # Not yet in active use.
 #mlab-mac-yosemite
 #mlab-mac-mountainlion
