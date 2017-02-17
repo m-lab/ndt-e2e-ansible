@@ -125,11 +125,11 @@ This is a more advanced example. It runs:
 * 50 test iterations
 * excluding the Banjo client
 * only under the Chrome browser
-* on the mlab-mac-capitan remote node
+* on the mlab-mac-sierra remote node
 
 ```bash
 ansible-playbook run.yml \
-  --limit mlab-mac-capitan:mlabmeddlebox \
+  --limit mlab-mac-sierra:mlabmeddlebox \
   --extra-vars "supported_browsers=chrome iterations=50" \
   --skip-tags "banjo"
 ```
