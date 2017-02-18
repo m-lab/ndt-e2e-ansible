@@ -82,7 +82,7 @@
       set_fact:
         environment_vars:
           PATH: "{{ ansible_env.PATH }}:{{ selenium_drivers_path }}"
-          SELENIUM_SERVER_JAR: "{{ selenium_drivers_path }}/{{ selenium_server_jar_file }}"
+          #SELENIUM_SERVER_JAR: "{{ selenium_drivers_path }}/{{ selenium_server_jar_file }}"
 
 - name: Configure meddlebox for testing
   hosts: mlabmeddlebox
