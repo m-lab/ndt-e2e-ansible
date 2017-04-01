@@ -7,9 +7,6 @@ ndt_e2e_client_dir: /opt/ndt-e2e-clientworker
 # Path for selenium extension binaries
 selenium_drivers_path: /opt/selenium_drivers
 
-# File name of Selenium server JAR file
-selenium_server_jar_file: selenium-server-standalone-3.0.1.jar
-
 # Directories for storing results of NDT E2E tests.
 results_dir: /opt/ndt-results
 raw_results_dir: "{{ results_dir }}/raw"

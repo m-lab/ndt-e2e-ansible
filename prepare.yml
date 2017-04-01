@@ -28,8 +28,8 @@
       dest: "{{ temp_dir }}\\chrome_installer.exe"
 
     firefox_installer:
-      url: https://download.mozilla.org/?product=firefox-45.0.1-SSL&os=win&lang=en-US
-      dest: "{{ temp_dir }}\\Firefox Setup 45.0.1.exe"
+      url: https://ftp.mozilla.org/pub/firefox/releases/49.0.1/win64/en-US/Firefox%20Setup%2049.0.1.exe
+      dest: "{{ temp_dir }}\\Firefox Setup.exe"
 
     selenium_edge_installer:
       # WebDriver installer for Windows 10 Build 10240
@@ -41,7 +41,7 @@
       dest: "{{ temp_dir }}\\chromedriver_win32.zip"
 
     selenium_gecko_driver_zip:
-      url: https://github.com/mozilla/geckodriver/releases/download/v0.14.0/geckodriver-v0.14.0-win64.zip
+      url: https://github.com/mozilla/geckodriver/releases/download/v0.15.0/geckodriver-v0.15.0-win64.zip
       dest: "{{ temp_dir }}\\geckodriver_win64.zip"
 
     # Path for selenium extension binaries
@@ -74,7 +74,7 @@
 
     - name: install Python
       tags: python
-      win_msi: path="{{ python_installer.url }}" wait=true
+      win_msi: path="{{ python_installer.dest }}" wait=true
       register: python_install
       when: python_download.changed
 
@@ -370,14 +370,8 @@
     selenium_chrome_driver_url: https://chromedriver.storage.googleapis.com/2.27/chromedriver_mac64.zip
     selenium_chrome_download_path: "{{ temp_dir }}/chromedriver_mac64.zip"
 
-    selenium_gecko_driver_url: https://github.com/mozilla/geckodriver/releases/download/v0.14.0/geckodriver-v0.14.0-macos.tar.gz
+    selenium_gecko_driver_url: https://github.com/mozilla/geckodriver/releases/download/v0.15.0/geckodriver-v0.15.0-macos.tar.gz
     selenium_gecko_download_path: "{{ temp_dir }}/geckodriver_macos.tar.gz"
-
-    #selenium_safari_driver_url: http://selenium-release.storage.googleapis.com/3.0/SafariDriver.safariextz
-    #selenium_safari_download_path: "{{ temp_dir }}/SafariDriver.safariextz"
-
-    selenium_server_jar_url: "http://selenium-release.storage.googleapis.com/3.0/{{ selenium_server_jar_file }}"
-    selenium_server_jar_path: "{{ selenium_drivers_path }}/{{ selenium_server_jar_file }}"
 
     # Named mavericks, but works on El Capitan.
     # TODO(mtlynch): Verify this package works on Mountain Lion.
@@ -419,13 +413,6 @@
                dest={{ selenium_gecko_download_path }}
       register: download_selenium_gecko
 
-    - name: download Selenium server jar
-      become_user: "{{ ansible_user }}"
-      tags: selenium-jar
-      get_url: url={{ selenium_server_jar_url }}
-               dest={{ selenium_server_jar_path }}
-      register: download_selenium_jar
-
     # TODO(mtlynch): Switch to unarchive module once issue #15754 is fixed:
     # https://github.com/ansible/ansible/issues/15754
     - name: unarchive Selenium Chrome driver
@@ -441,13 +428,6 @@
       tags: selenium-gecko
       shell: tar xzf {{ selenium_gecko_download_path }} -C {{ selenium_drivers_path }}
       when: download_selenium_gecko.changed
-
-
-    #- name: download Selenium Safari driver
-    #  become_user: "{{ ansible_user }}"
-    #  tags: selenium-safari
-    #  get_url: url={{ selenium_safari_driver_url }}
-    #           dest={{ selenium_safari_download_path }}
 
     # TODO(mtlynch): Automate installation of Selenium Safari driver. This may
     # not be possible: http://stackoverflow.com/q/9981307/3653712
@@ -465,20 +445,6 @@
 
     - name: unmount Git installer dmg file
       shell: hdiutil detach "{{ git_installer_image_name }}/"
-
-    #- name: download JDK installer for OS X
-    #  become_user: "{{ ansible_user }}"
-    #  get_url: url={{ jdk_installer_url }}
-    #           dest={{ jdk_installer_download_path }}
-    #
-    #- name: mount JDK installer dmg file
-    #  shell: hdiutil attach {{ jdk_installer_download_path }}
-    #
-    #- name: install JDK
-    #  shell: installer -package "/Volumes/{{ jdk_installer_image_name }}/{{ jdk_installer_image_name }}.pkg" -target /
-    #
-    #- name: unmount JDK installer dmg file
-    #  shell: hdiutil detach "/Volumes/{{ jdk_installer_image_name }}/"
 
     - name: install pip
       tags: pip
