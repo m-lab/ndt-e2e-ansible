@@ -260,7 +260,7 @@
 - name: Install NDT client wrapper and all dependencies on Linux client machines
   hosts: linux
   vars:
-    selenium_chrome_driver_url: http://chromedriver.storage.googleapis.com/2.21/chromedriver_linux64.zip
+    selenium_chrome_driver_url: http://chromedriver.storage.googleapis.com/2.29/chromedriver_linux64.zip
     selenium_chrome_driver: "{{ selenium_drivers_path }}/chromedriver"
     selenium_gecko_driver_url: https://github.com/mozilla/geckodriver/releases/download/v0.15.0/geckodriver-v0.15.0-linux64.tar.gz
     selenium_gecko_driver: "{{ selenium_drivers_path }}/geckodriver"
