@@ -373,7 +373,10 @@
     selenium_gecko_driver_url: https://github.com/mozilla/geckodriver/releases/download/v0.15.0/geckodriver-v0.15.0-macos.tar.gz
     selenium_gecko_download_path: "{{ temp_dir }}/geckodriver_macos.tar.gz"
 
-    # Named mavericks, but works on El Capitan.
+    selenium_server_jar_url: "http://selenium-release.storage.googleapis.com/2.53/{{ selenium_server_jar_file }}"
+    selenium_server_jar_path: "{{ selenium_drivers_path }}/{{ selenium_server_jar_file }}"
+
+    # Named mavericks, but works on Sierra (hopefully).
     # TODO(mtlynch): Verify this package works on Mountain Lion.
     git_installer_version: git-2.10.1-intel-universal-mavericks
     git_installer_url: http://ufpr.dl.sourceforge.net/project/git-osx-installer/{{ git_installer_version }}.dmg
@@ -445,6 +448,20 @@
 
     - name: unmount Git installer dmg file
       shell: hdiutil detach "{{ git_installer_image_name }}/"
+
+    - name: download JDK installer for OS X
+      become_user: "{{ ansible_user }}"
+      get_url: url={{ jdk_installer_url }}
+               dest={{ jdk_installer_download_path }}
+
+    - name: mount JDK installer dmg file
+      shell: hdiutil attach {{ jdk_installer_download_path }}
+
+    - name: install JDK
+      shell: installer -package "/Volumes/{{ jdk_installer_image_name }}/{{ jdk_installer_image_name }}.pkg" -target /
+
+    - name: unmount JDK installer dmg file
+      shell: hdiutil detach "/Volumes/{{ jdk_installer_image_name }}/"
 
     - name: install pip
       tags: pip
