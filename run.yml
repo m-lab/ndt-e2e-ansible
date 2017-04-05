@@ -169,8 +169,11 @@
     - name: run html5 client wrapper for OS X
       tags: html5
       environment: "{{ environment_vars }}"
+      become: True
+      become_method: sudo
+      become_user: root
       shell: >
-        sudo python {{ ndt_e2e_client_dir }}/{{ client_wrapper_path }}
+        python {{ ndt_e2e_client_dir }}/{{ client_wrapper_path }}
         --verbose
         --client=ndt_js
         --browser={{ item }}
@@ -198,8 +201,11 @@
     - name: run banjo wrapper for OS X
       tags: banjo
       environment: "{{ environment_vars }}"
+      become: True
+      become_method: sudo
+      become_user: root
       shell: >
-        sudo python {{ ndt_e2e_client_dir }}/{{ client_wrapper_path }}
+        python {{ ndt_e2e_client_dir }}/{{ client_wrapper_path }}
         --verbose
         --client=banjo
         --browser={{ item }}
