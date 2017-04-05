@@ -37,7 +37,7 @@
       dest: "{{ temp_dir }}\\MicrosoftWebDriver.msi"
 
     selenium_chrome_driver_zip:
-      url: https://chromedriver.storage.googleapis.com/2.27/chromedriver_win32.zip
+      url: https://chromedriver.storage.googleapis.com/2.29/chromedriver_win32.zip
       dest: "{{ temp_dir }}\\chromedriver_win32.zip"
 
     selenium_gecko_driver_zip:
