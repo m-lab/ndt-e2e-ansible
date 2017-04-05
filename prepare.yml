@@ -28,7 +28,7 @@
       dest: "{{ temp_dir }}\\chrome_installer.exe"
 
     firefox_installer:
-      url: https://download.mozilla.org/?product=firefox-stub&os=win&lang=en-US
+      url: https://ftp.mozilla.org/pub/firefox/releases/49.0.1/win64/en-US/Firefox%20Setup%2049.0.1.exe
       dest: "{{ temp_dir }}\\Firefox Setup.exe"
 
     selenium_edge_installer:
@@ -37,12 +37,17 @@
       dest: "{{ temp_dir }}\\MicrosoftWebDriver.msi"
 
     selenium_chrome_driver_zip:
-      url: http://chromedriver.storage.googleapis.com/2.9/chromedriver_win32.zip
+      url: https://chromedriver.storage.googleapis.com/2.27/chromedriver_win32.zip
       dest: "{{ temp_dir }}\\chromedriver_win32.zip"
+
+    selenium_gecko_driver_zip:
+      url: https://github.com/mozilla/geckodriver/releases/download/v0.15.0/geckodriver-v0.15.0-win64.zip
+      dest: "{{ temp_dir }}\\geckodriver_win64.zip"
 
     # Path for selenium extension binaries
     selenium_drivers_path: "C:\\selenium-drivers"
     selenium_chrome_driver: "{{ selenium_drivers_path }}\\chromedriver.exe"
+    selenium_gecko_driver: "{{ selenium_drivers_path }}\\geckodriver.exe"
 
     # WMF 5.0 upgrader for Windows Server 2012 R2
     wmf_installer_win2k12r2:
@@ -69,7 +74,7 @@
 
     - name: install Python
       tags: python
-      win_msi: path="{{ python_installer.url }}" wait=true
+      win_msi: path="{{ python_installer.dest }}" wait=true
       register: python_install
       when: python_download.changed
 
@@ -172,10 +177,26 @@
       register: selenium_chrome_install
       when: selenium_chrome_download.changed
 
-    - name: append Selenium Chrome driver to PATH variable
-      tags: selenium-chrome
+    - name: download Selenium Gecko driver
+      tags: selenium-gecko
+      win_get_url:
+        proxy_url: "{{ http_proxy }}"
+        url: "{{ selenium_gecko_driver_zip.url }}"
+        dest: "{{ selenium_gecko_driver_zip.dest }}"
+      register: selenium_gecko_download
+
+    - name: install Selenium Gecko driver
+      tags: selenium-gecko
+      win_unzip:
+        src: "{{ selenium_gecko_driver_zip.dest }}"
+        dest: "{{ selenium_drivers_path }}"
+        creates: "{{ selenium_gecko_driver }}"
+      register: selenium_gecko_install
+      when: selenium_gecko_download.changed
+
+    - name: append Selenium drivers dir to PATH variable
+      tags: selenium
       script: env_path_append.ps1 -append ";{{ selenium_drivers_path }}"
-      when: selenium_chrome_install.changed
 
     - name: check if NDT E2E client worker repo exists
       win_stat: path="{{ ndt_e2e_client_dir }}"
@@ -199,7 +220,7 @@
     - name: install NDT E2E dependencies
       tags: ndt-e2e
       environment:
-        http_proxy: "{{ http_proxy }}"
+        http_proxy: "{{ https_proxy }}"
       raw: pip install -r "{{ ndt_e2e_client_dir }}\\requirements.txt"
 
     - name: create HTTP replay directory
@@ -240,8 +261,9 @@
   hosts: linux
   vars:
     selenium_chrome_driver_url: http://chromedriver.storage.googleapis.com/2.21/chromedriver_linux64.zip
-
     selenium_chrome_driver: "{{ selenium_drivers_path }}/chromedriver"
+    selenium_gecko_driver_url: https://github.com/mozilla/geckodriver/releases/download/v0.15.0/geckodriver-v0.15.0-linux64.tar.gz
+    selenium_gecko_driver: "{{ selenium_drivers_path }}/geckodriver"
   become: True
   become_method: sudo
   become_user: root
@@ -270,13 +292,16 @@
         - xvfb
         - zip
 
-    - name: install xvfb init.d daemon script
+    - name: install xvfb systemd service unit file
       tags: xvfb
-      template: src=xvfb-init.d-template dest=/etc/init.d/xvfb mode=0755
+      template: src=xvfb-systemd-template dest=/etc/systemd/system/xvfb.service mode=0755
 
     - name: start xvfb service
       tags: xvfb
-      service: name=xvfb state=started
+      systemd: name=xvfb
+               enabled=yes
+               state=started
+               daemon_reload=yes
 
     - name: create Selenium driver directory
       tags: selenium-chrome
@@ -289,6 +314,14 @@
                  owner={{ ansible_user }}
                  copy=no
       register: selenium_chrome_install
+
+    - name: install Selenium Gecko driver
+      tags: selenium-gecko
+      unarchive: src={{ selenium_gecko_driver_url }}
+                 dest={{ selenium_drivers_path }}
+                 owner={{ ansible_user }}
+                 copy=no
+      register: selenium_gecko_install
 
     - name: create NDT E2E client worker source directory
       tags: ndt-e2e
@@ -334,21 +367,21 @@
     # Temporary directory in which we download packages.
     temp_dir: /tmp
 
-    selenium_chrome_driver_url: http://chromedriver.storage.googleapis.com/2.21/chromedriver_mac32.zip
-    selenium_chrome_download_path: "{{ temp_dir }}/chromedriver_mac32.zip"
+    selenium_chrome_driver_url: https://chromedriver.storage.googleapis.com/2.27/chromedriver_mac64.zip
+    selenium_chrome_download_path: "{{ temp_dir }}/chromedriver_mac64.zip"
 
-    selenium_safari_driver_url: http://selenium-release.storage.googleapis.com/2.48/SafariDriver.safariextz
-    selenium_safari_download_path: "{{ temp_dir }}/SafariDriver.safariextz"
+    selenium_gecko_driver_url: https://github.com/mozilla/geckodriver/releases/download/v0.15.0/geckodriver-v0.15.0-macos.tar.gz
+    selenium_gecko_download_path: "{{ temp_dir }}/geckodriver_macos.tar.gz"
 
     selenium_server_jar_url: "http://selenium-release.storage.googleapis.com/2.53/{{ selenium_server_jar_file }}"
     selenium_server_jar_path: "{{ selenium_drivers_path }}/{{ selenium_server_jar_file }}"
 
     # Named mavericks, but works on Sierra (hopefully).
     # TODO(mtlynch): Verify this package works on Mountain Lion.
-    git_installer_version: git-2.8.1-intel-universal-mavericks
+    git_installer_version: git-2.10.1-intel-universal-mavericks
     git_installer_url: http://ufpr.dl.sourceforge.net/project/git-osx-installer/{{ git_installer_version }}.dmg
     git_installer_download_path: "{{ temp_dir }}/{{ git_installer_version }}.dmg"
-    git_installer_image_name: /Volumes/Git 2.8.1 Mavericks Intel Universal
+    git_installer_image_name: /Volumes/Git 2.10.1 Mavericks Intel Universal
 
     jdk_installer_version: jdk-8u121-macosx-x64
     jdk_installer_url: "http://mirror.measurementlab.net/misc/{{ jdk_installer_version }}.dmg"
@@ -376,12 +409,12 @@
                dest={{ selenium_chrome_download_path }}
       register: download_selenium_chrome
 
-    - name: download Selenium server jar
+    - name: download Selenium Gecko driver
       become_user: "{{ ansible_user }}"
-      tags: selenium-jar
-      get_url: url={{ selenium_server_jar_url }}
-               dest={{ selenium_server_jar_path }}
-      register: download_selenium_jar
+      tags: selenium-gecko
+      get_url: url={{ selenium_gecko_driver_url }}
+               dest={{ selenium_gecko_download_path }}
+      register: download_selenium_gecko
 
     # TODO(mtlynch): Switch to unarchive module once issue #15754 is fixed:
     # https://github.com/ansible/ansible/issues/15754
@@ -391,11 +424,13 @@
       shell: unzip -o {{ selenium_chrome_download_path }} -d {{ selenium_drivers_path }}
       when: download_selenium_chrome.changed
 
-    - name: download Selenium Safari driver
+    # TODO(nkinkade): Switch to unarchive module once issue #15754 is fixed:
+    # https://github.com/ansible/ansible/issues/15754
+    - name: unarchive Selenium Gecko driver
       become_user: "{{ ansible_user }}"
-      tags: selenium-safari
-      get_url: url={{ selenium_safari_driver_url }}
-               dest={{ selenium_safari_download_path }}
+      tags: selenium-gecko
+      shell: tar xzf {{ selenium_gecko_download_path }} -C {{ selenium_drivers_path }}
+      when: download_selenium_gecko.changed
 
     # TODO(mtlynch): Automate installation of Selenium Safari driver. This may
     # not be possible: http://stackoverflow.com/q/9981307/3653712

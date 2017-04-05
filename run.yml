@@ -152,7 +152,7 @@
     - osx
   serial: 1
   tasks:
-    - name: run html5 client wrapper
+    - name: run html5 client wrapper for Linux
       tags: html5
       environment: "{{ environment_vars }}"
       shell: >
@@ -164,8 +164,26 @@
         --output={{ raw_results_dir }}
         --iterations={{ iterations }} 2>&1 | tee -a {{ log_path }}
       with_items: "{{ supported_browsers }}"
+      when: "'linux' in group_names"
 
-    - name: run banjo wrapper
+    - name: run html5 client wrapper for OS X
+      tags: html5
+      environment: "{{ environment_vars }}"
+      become: True
+      become_method: sudo
+      become_user: root
+      shell: >
+        python {{ ndt_e2e_client_dir }}/{{ client_wrapper_path }}
+        --verbose
+        --client=ndt_js
+        --browser={{ item }}
+        --server={{ ndt_server_fqdn }}
+        --output={{ raw_results_dir }}
+        --iterations={{ iterations }} 2>&1 | tee -a {{ log_path }}
+      with_items: "{{ supported_browsers }}"
+      when: "'osx' in group_names"
+
+    - name: run banjo wrapper for Linux
       tags: banjo
       environment: "{{ environment_vars }}"
       shell: >
@@ -178,6 +196,25 @@
         --output={{ raw_results_dir }}
         --iterations={{ iterations }} 2>&1 | tee -a {{ log_path }}
       with_items: "{{ supported_browsers }}"
+      when: "'linux' in group_names"
+
+    - name: run banjo wrapper for OS X
+      tags: banjo
+      environment: "{{ environment_vars }}"
+      become: True
+      become_method: sudo
+      become_user: root
+      shell: >
+        python {{ ndt_e2e_client_dir }}/{{ client_wrapper_path }}
+        --verbose
+        --client=banjo
+        --browser={{ item }}
+        --server={{ ndt_server_fqdn }}
+        --client_path={{ http_replay_dir }}/{{ http_replay_file }}
+        --output={{ raw_results_dir }}
+        --iterations={{ iterations }} 2>&1 | tee -a {{ log_path }}
+      with_items: "{{ supported_browsers }}"
+      when: "'osx' in group_names"
 
 - name: Package NDT E2E results on Windows hosts
   hosts: windows

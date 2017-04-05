@@ -36,6 +36,8 @@ osx
 
 [clients:vars]
 http_proxy=http://lockjaw.client.mlab.lan:8080
+https_proxy=http://lockjaw.client.mlab.lan:8080
+
 # Be sure to use the SSL-friendly FQDN (with hyphens instead of dots)
 ndt_server_fqdn=ndt-iupui-mlab2-iad0t.measurement-lab.org
 
