@@ -37,7 +37,7 @@
       dest: "{{ temp_dir }}\\MicrosoftWebDriver.msi"
 
     selenium_chrome_driver_zip:
-      url: https://chromedriver.storage.googleapis.com/2.27/chromedriver_win32.zip
+      url: https://chromedriver.storage.googleapis.com/2.29/chromedriver_win32.zip
       dest: "{{ temp_dir }}\\chromedriver_win32.zip"
 
     selenium_gecko_driver_zip:
@@ -260,7 +260,7 @@
 - name: Install NDT client wrapper and all dependencies on Linux client machines
   hosts: linux
   vars:
-    selenium_chrome_driver_url: http://chromedriver.storage.googleapis.com/2.21/chromedriver_linux64.zip
+    selenium_chrome_driver_url: http://chromedriver.storage.googleapis.com/2.29/chromedriver_linux64.zip
     selenium_chrome_driver: "{{ selenium_drivers_path }}/chromedriver"
     selenium_gecko_driver_url: https://github.com/mozilla/geckodriver/releases/download/v0.15.0/geckodriver-v0.15.0-linux64.tar.gz
     selenium_gecko_driver: "{{ selenium_drivers_path }}/geckodriver"
@@ -367,14 +367,11 @@
     # Temporary directory in which we download packages.
     temp_dir: /tmp
 
-    selenium_chrome_driver_url: https://chromedriver.storage.googleapis.com/2.27/chromedriver_mac64.zip
+    selenium_chrome_driver_url: https://chromedriver.storage.googleapis.com/2.29/chromedriver_mac64.zip
     selenium_chrome_download_path: "{{ temp_dir }}/chromedriver_mac64.zip"
 
     selenium_gecko_driver_url: https://github.com/mozilla/geckodriver/releases/download/v0.15.0/geckodriver-v0.15.0-macos.tar.gz
     selenium_gecko_download_path: "{{ temp_dir }}/geckodriver_macos.tar.gz"
-
-    selenium_server_jar_url: "http://selenium-release.storage.googleapis.com/2.53/{{ selenium_server_jar_file }}"
-    selenium_server_jar_path: "{{ selenium_drivers_path }}/{{ selenium_server_jar_file }}"
 
     # Named mavericks, but works on Sierra (hopefully).
     # TODO(mtlynch): Verify this package works on Mountain Lion.
@@ -382,11 +379,6 @@
     git_installer_url: http://ufpr.dl.sourceforge.net/project/git-osx-installer/{{ git_installer_version }}.dmg
     git_installer_download_path: "{{ temp_dir }}/{{ git_installer_version }}.dmg"
     git_installer_image_name: /Volumes/Git 2.10.1 Mavericks Intel Universal
-
-    jdk_installer_version: jdk-8u121-macosx-x64
-    jdk_installer_url: "http://mirror.measurementlab.net/misc/{{ jdk_installer_version }}.dmg"
-    jdk_installer_download_path: "{{ temp_dir }}/{{ jdk_installer_version }}.dmg"
-    jdk_installer_image_name: JDK 8 Update 121
 
   become: True
   become_method: sudo
@@ -448,20 +440,6 @@
 
     - name: unmount Git installer dmg file
       shell: hdiutil detach "{{ git_installer_image_name }}/"
-
-    - name: download JDK installer for OS X
-      become_user: "{{ ansible_user }}"
-      get_url: url={{ jdk_installer_url }}
-               dest={{ jdk_installer_download_path }}
-
-    - name: mount JDK installer dmg file
-      shell: hdiutil attach {{ jdk_installer_download_path }}
-
-    - name: install JDK
-      shell: installer -package "/Volumes/{{ jdk_installer_image_name }}/{{ jdk_installer_image_name }}.pkg" -target /
-
-    - name: unmount JDK installer dmg file
-      shell: hdiutil detach "/Volumes/{{ jdk_installer_image_name }}/"
 
     - name: install pip
       tags: pip
